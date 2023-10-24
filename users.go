@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+	"os/user"
 
 	so "github.com/iamacarpet/go-win64api/shared"
 )
@@ -59,6 +60,8 @@ const (
 	USER_UF_PASSWD_CANT_CHANGE = 64
 	USER_UF_NORMAL_ACCOUNT     = 512
 	USER_UF_DONT_EXPIRE_PASSWD = 65536
+	USERS_GROUP_SID             = "S-1-5-32-545"
+	ADMINISTRATORS_GROUP_SID    = "S-1-5-32-544"
 )
 
 type USER_INFO_1 struct {
@@ -205,8 +208,13 @@ func UserAddEx(opts UserAddOptions) (bool, error) {
 			return false, fmt.Errorf("Problem while setting Full Name")
 		}
 	}
+	
+	group, err := user.LookupGroupId(USERS_GROUP_SID)
+	if err != nil {
+		return false, fmt.Errorf("Unable to get Users group name : %s", err)
+	}
 
-	return AddGroupMembership(opts.Username, "Users")
+	return AddGroupMembership(opts.Username, group.Name)
 }
 
 // UserAdd creates a new user account with the given username, full name, and
@@ -430,12 +438,20 @@ func RemoveGroupMembership(username, groupname string) (bool, error) {
 
 // SetAdmin adds the user to the "Administrators" group.
 func SetAdmin(username string) (bool, error) {
-	return AddGroupMembership(username, "Administrators")
+	group, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	if err != nil {
+		return false, fmt.Errorf("Unable to get Users group name : %s", err)
+	}
+	return AddGroupMembership(username, group.Name)
 }
 
 // RevokeAdmin removes the user from the "Administrators" group.
 func RevokeAdmin(username string) (bool, error) {
-	return RemoveGroupMembership(username, "Administrators")
+	group, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	if err != nil {
+		return false, fmt.Errorf("Unable to get Users group name : %s", err)
+	}
+	return RemoveGroupMembership(username, group.Name)
 }
 
 // UserUpdateFullName changes the full name attached to the user's account.
