@@ -438,20 +438,36 @@ func RemoveGroupMembership(username, groupname string) (bool, error) {
 
 // SetAdmin adds the user to the "Administrators" group.
 func SetAdmin(username string) (bool, error) {
-	group, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	userGroup, err := user.LookupGroupId(USERS_GROUP_SID)
 	if err != nil {
 		return false, fmt.Errorf("Unable to get Users group name : %s", err)
 	}
-	return AddGroupMembership(username, group.Name)
+	adminGroup, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	if err != nil {
+		return false, fmt.Errorf("Unable to get Users group name : %s", err)
+	}
+	ok, err := AddGroupMembership(username, adminGroup.Name)
+	if !ok {
+		return false, err
+	}
+	return RemoveGroupMembership(username, userGroup.Name)
 }
 
 // RevokeAdmin removes the user from the "Administrators" group.
 func RevokeAdmin(username string) (bool, error) {
-	group, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	userGroup, err := user.LookupGroupId(USERS_GROUP_SID)
 	if err != nil {
 		return false, fmt.Errorf("Unable to get Users group name : %s", err)
 	}
-	return RemoveGroupMembership(username, group.Name)
+	adminGroup, err := user.LookupGroupId(ADMINISTRATORS_GROUP_SID)
+	if err != nil {
+		return false, fmt.Errorf("Unable to get Users group name : %s", err)
+	}
+	ok, err := AddGroupMembership(username, userGroup.Name)
+	if !ok {
+		return false, err
+	}
+	return RemoveGroupMembership(username, adminGroup.Name)
 }
 
 // UserUpdateFullName changes the full name attached to the user's account.
